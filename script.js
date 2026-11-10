@@ -104,16 +104,6 @@ function toggleDone(id) {
 }
 
  
-// Удаление привычки
 function deleteHabit(id) {
-    const habit = habits.find(h => h.id === id);
-    if (!habit) return;
- 
-    const confirmed = confirm(`Удалить привычку «${habit.text}»?`);
-    if (!confirmed) return;
- 
-    habits = habits.filter(h => h.id !== id);
-    saveHabits();
-    renderHabits();
-    updateStats();
+    // будет реализовано позже
 }
