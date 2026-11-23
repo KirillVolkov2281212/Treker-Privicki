@@ -1,0 +1,70 @@
+@startuml Daily_Workflow_Sequence
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "Контроллер" as Controller
+participant "Сервис задач" as TaskService
+participant "Сервис аналитики" as AnalyticsService
+participant "База данных" as DB
+== Утренний обзор задач ==
+User -> UI: Открывает приложение
+activate User
+activate UI
+UI -> Controller: GET /api/tasks/daily-overview
+activate Controller
+Controller -> TaskService: getTodaysTasks(user_id)
+activate TaskService
+TaskService -> DB: SELECT * FROM Tasks\nWHERE due_date = TODAY()\nAND status != 'completed'
+activate DB
+DB --> TaskService: todays_tasks
+deactivate DB
+TaskService -> TaskService: calculatePriorityOrder(todays_tasks)
+activate TaskService
+TaskService --> Controller: DailyTasksResponse(tasks)
+deactivate TaskService
+Controller --> UI: 200 OK\n{todays_tasks}
+deactivate Controller
+UI -> UI: Отобразить "Задачи на сегодня"
+UI -> UI: Подсветить срочные задачи
+UI --> User: Показать приоритетный список
+== Работа с задачами ==
+loop Для каждой выполненной задачи
+  User -> UI: Отмечает задачу выполненной
+  UI -> Controller: PATCH /api/tasks/{id}\n{status: "completed"}
+  activate Controller  
+  Controller -> TaskService: completeTask(task_id)
+  activate TaskService  
+  TaskService -> DB: UPDATE Tasks SET status = 'completed'\nWHERE task_id = ?
+  activate DB
+  DB --> TaskService: success
+  deactivate DB  
+  TaskService -> AnalyticsService: trackTaskCompletion(task_id, timestamp)
+  activate AnalyticsService
+  AnalyticsService --> TaskService: tracked
+  deactivate AnalyticsService  
+  TaskService --> Controller: SuccessResponse()
+  deactivate TaskService  
+  Controller --> UI: 200 OK
+  deactivate Controller  
+  UI -> UI: Обновить прогресс дня
+  UI --> User: Показать мотивационное сообщение
+end
+== Вечерняя аналитика ==
+User -> UI: Запрашивает отчет за день
+UI -> Controller: GET /api/analytics/daily
+activate Controller
+Controller -> AnalyticsService: getDailyReport(user_id)
+activate AnalyticsService
+
+AnalyticsService -> DB: Статистические запросы\nпо выполненным задачам
+activate DB
+DB --> AnalyticsService: analytics_data
+deactivate DB
+AnalyticsService --> Controller: AnalyticsReport(data)
+deactivate AnalyticsService
+Controller --> UI: 200 OK\n{completed_count, productivity_score}
+deactivate Controller
+UI -> UI: Сгенерировать визуальный отчет
+UI --> User: Показать достижения за день
+deactivate UI
+deactivate User
+@enduml
