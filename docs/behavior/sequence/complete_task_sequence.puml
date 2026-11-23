@@ -1,0 +1,36 @@
+@startuml Complete_Task_Sequence
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "Контроллер" as Controller
+participant "Сервис задач" as TaskService
+participant "База данных" as DB
+participant "Сервис уведомлений" as NotificationService
+User -> UI: Кликает checkbox\nзадачи
+activate User
+activate UI
+UI -> Controller: PATCH /api/tasks/{id}\n{status: "completed"}
+activate Controller
+Controller -> TaskService: updateTaskStatus(task_id, "completed")
+activate TaskService
+TaskService -> DB: UPDATE Tasks\nSET status = 'completed'\nWHERE task_id = ?
+activate DB
+DB --> TaskService: rows_affected
+deactivate DB
+TaskService -> TaskService: checkIfAllProjectTasksCompleted(task_id)
+activate TaskService
+alt Все задачи проекта завершены
+  TaskService -> NotificationService: notifyProjectCompleted(project_id)
+  activate NotificationService
+  NotificationService --> TaskService: notification_sent
+  deactivate NotificationService
+end
+TaskService --> Controller: SuccessResponse()
+deactivate TaskService
+Controller --> UI: 200 OK
+deactivate Controller
+UI -> UI: Визуально отметить задачу\n(зачеркивание, серый цвет)
+UI -> UI: Обновить статистику выполненных
+UI --> User: Показать анимацию выполнения
+deactivate UI
+deactivate User
+@enduml
