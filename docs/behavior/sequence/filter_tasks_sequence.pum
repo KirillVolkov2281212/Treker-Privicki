@@ -1,0 +1,30 @@
+@startuml Filter_Tasks_Sequence
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "Контроллер" as Controller
+participant "Сервис задач" as TaskService
+participant "База данных" as DB
+User -> UI: Выбирает категорию\nдля фильтрации
+activate User
+activate UI
+UI -> Controller: GET /api/tasks?category={category_id}
+activate Controller
+Controller -> TaskService: getTasksByCategory(category_id)
+activate TaskService
+TaskService -> DB: SELECT * FROM Tasks t\nJOIN Task_Categories tc ON t.task_id = tc.task_id\nWHERE tc.category_id = ?
+activate DB
+
+DB --> TaskService: tasks_list
+deactivate DB
+TaskService -> TaskService: formatTasksForDisplay(tasks_list)
+activate TaskService
+TaskService --> Controller: TasksListResponse(tasks)
+deactivate TaskService
+Controller --> UI: 200 OK\n{tasks_array}
+deactivate Controller
+UI -> UI: Очистить текущий список
+UI -> UI: Отобразить отфильтрованные задачи
+UI --> User: Показать только задачи\nвыбранной категории
+deactivate UI
+deactivate User
+@enduml
