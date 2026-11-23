@@ -1,0 +1,37 @@
+@startuml Add_Task_Sequence
+actor "Пользователь" as User
+participant "Интерфейс" as UI
+participant "Контроллер" as Controller
+participant "Сервис задач" as TaskService
+participant "База данных" as DB
+User -> UI: Вводит данные задачи\n(название, описание, приоритет)
+activate User
+activate UI
+UI -> Controller: POST /api/tasks\n{title, description, priority}
+activate Controller
+Controller -> TaskService: createTask(taskData)
+activate TaskService
+TaskService -> TaskService: validateTaskData(taskData)
+activate TaskService
+alt Данные валидны
+  TaskService -> DB: INSERT INTO Tasks\n(title, description, priority)
+  activate DB
+  DB --> TaskService: task_id
+  deactivate DB  
+  TaskService --> Controller: SuccessResponse(task_id)
+  deactivate TaskService  
+  Controller --> UI: 201 Created\n{task_id, message}
+  deactivate Controller  
+  UI -> UI: Показать уведомление "Задача создана"
+  UI -> UI: Обновить список задач
+  UI --> User: Отобразить новую задачу в списке
+  else Данные невалидны
+  TaskService --> Controller: ErrorResponse("Неверные данные")
+  deactivate TaskService  
+  Controller --> UI: 400 Bad Request\n{error_message}
+  deactivate Controller  
+  UI --> User: Показать ошибку валидации
+end
+deactivate UI
+deactivate User
+@enduml
