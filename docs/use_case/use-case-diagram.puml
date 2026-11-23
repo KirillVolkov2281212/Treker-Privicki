@@ -1,0 +1,33 @@
+@startuml
+left to right direction
+actor Пользователь as User
+rectangle "Умный список задач" {
+  usecase "Добавление новой задачи" as AddTask
+  usecase "Пометка задачи как выполненной" as CompleteTask
+  usecase "Редактирование задачи" as EditTask
+  usecase "Удаление задачи" as DeleteTask
+  usecase "Просмотр списка задач" as ViewTasks
+  usecase "Фильтрация задач по категориям" as FilterTasks
+  usecase "Автосохранение изменений" as AutoSave
+  usecase "Валидация данных" as ValidateData
+  usecase "Поиск задачи" as SearchTask
+  usecase "Сортировка задач" as SortTasks
+
+  ' Include relationships
+  AddTask .> ValidateData : include
+  EditTask .> ValidateData : include
+  EditTask .> AutoSave : include
+
+  ' Extend relationships
+  ViewTasks <.. FilterTasks : extend
+  ViewTasks <.. SearchTask : extend
+  ViewTasks <.. SortTasks : extend
+}
+
+' Actor associations
+User -- AddTask
+User -- CompleteTask
+User -- EditTask
+User -- DeleteTask
+User -- ViewTasks
+@enduml
